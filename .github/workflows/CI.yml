@@ -1,14 +1,18 @@
-name: CI
+name: CI & Deploy (Prod - Standalone)
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    branches: [ main ]
+  workflow_dispatch:   # lets you run it manually too
+
+env:
+  NODE_VERSION: "20.x"
+  AZURE_APP_NAME: big-baboon    # your actual App Service name
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -16,28 +20,30 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
+      - name: Build (Next.js standalone)
         run: npm run build
 
       - name: Prepare standalone bundle
         run: |
-          rm -rf build
-          mkdir -p build
-          cp -r .next/standalone/* build/
-          mkdir -p build/.next
-          cp -r .next/static build/.next/static
-          cp -r public build/public
-          cp package.json build/package.json
+          rm -rf out_bundle
+          mkdir -p out_bundle
+          cp -r .next/standalone out_bundle/standalone
+          cp -r .next/static out_bundle/static
+          if [ -d public ]; then cp -r public out_bundle/public; fi
+          cp package.json out_bundle/package.json
+          echo "node standalone/server.js" > out_bundle/hosting.start.cmd
+          chmod +x out_bundle/hosting.start.cmd
+          echo "Bundle contents:" && find out_bundle -maxdepth 2 -type d -print
 
       - name: Deploy to Azure App Service
-        uses: azure/webapps-deploy@v2
+        uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ secrets.AZURE_APP_NAME }}
+          app-name: ${{ env.AZURE_APP_NAME }}
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE }}
-          package: build
+          package: out_bundle
