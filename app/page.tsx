@@ -1,8 +1,8 @@
-import HomeView from '@/components/home/HomeView';
+import DirectoryShell from '@/components/DirectoryShell';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default function Page() {
-  return <HomeView />;
+  return <DirectoryShell />;
 }
