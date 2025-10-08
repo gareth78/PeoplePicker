@@ -6,8 +6,9 @@
   color-scheme: light;
 }
 
-body {
-  background: theme('colors.slate.100');
+* {
+  scrollbar-width: thin;
+  scrollbar-color: theme('colors.slate.300') transparent;
 }
 
 ::-webkit-scrollbar {
